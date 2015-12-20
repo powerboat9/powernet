@@ -3,7 +3,7 @@ if not fs.exists("powernet/server/config") then
     local configWrite = fs.open("powernet/server/config", "w")
     configWrite.write("--Config for Server--\n")
     configWrite.write("address = os.getComputerID()\n")
-    configWrite.write("fileLocation = \"powernet/server/files\"\n")
+    configWrite.write("fileLocation = \"powernet/server/files/\"\n")
     configWrite.write("down = false --Makes the server unavalible\n")
     configWrite.write("downReason = nil --Gives the reason for being down")
     configWrite.close()
@@ -13,7 +13,7 @@ os.loadAPI("powernet/server/config")
 
 --Functions to get data to display
 
-function interpretRequest(request)
+function interpretRequest(request, dontLoadErrorPage)
     local file = ""
     local fileArgs = ""
     do
@@ -22,20 +22,35 @@ function interpretRequest(request)
         fileArgs = request:sub(seperate + 1)
     end
     local isDynamic = false
-    local error = nil
+    local errorCode = nil
+    fileString = ""
     do
         local errorReport = {}
         if config.down and ((not (type(config.down) == "function")) or config.down(errorReport, request, file, fileArgs)) then
             if type(config.down) == "function" then
-                error = tostring(errorReport.error)
+                errorCode = tostring(errorReport.error)
             elseif type(config.down) == "table" then
-                error = textutils.serialize(config.downReason)
+                errorCode = textutils.serialize(config.downReason)
             else
-                error = tostring(config.downReason)
+                errorCode = tostring(config.downReason)
             end
         else
-            local fileData = fs.open(file, "r")
-            local fileString = fileData.readAll()
+            local fileData = fs.open(config.fileLocation .. shell.resolve(file), "r")
+            if fileData then
+                fileString = fileData.readAll()
+            end
             fileData.close()
             if fileString:find("^EXECUTABLE\n") then
-                isDynamic
+                isDynamic = true
+                fileString = fileString:sub(12)
+            elseif fileString:find("^POWER WEBDATA\n") then
+                fileString = fileString:sub(15)
+            elseif (fileData == "") or (fileData == nil) then
+                errorCode = "Page Not Found"
+            else
+                errorCode = "Invalid Page"
+            end
+        end
+    end
+    if errorCode and (not dontLoadErrorPage) then
+        return interpretRequest("
