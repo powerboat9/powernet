@@ -43,7 +43,8 @@ function loadConfig(file, defaults, typesAllowed)
     end
     setmetatable(sandbox, {})
     for k, v in pairs(typesAllowed) do
-        local keyValue, ranFully, currentKey = textKeyToValue(sandbox, k)
-        if not isTypes(keyValue, unpack(v)) then
-            if not ranFully
+        if type(v) == "string" then
+            local keyValue, ranFully, currentKey = textKeyToValue(sandbox, k)
+            if not isTypes(keyValue, unpack(v)) then
+                if not ranFully
 end
