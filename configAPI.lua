@@ -16,7 +16,7 @@ function textKeyToValue(t, txt)
     end
     while (type(currentT) == "table") and branches[1] do
         currentT = currentT[branches[1]]
-        currentTreeLocation:insert(1, branches[1])
+        currentTreeLocation[#currentTreeLocation + 1] = branches[1]
         branches:remove(1)
     end
     return currentT, (type(currentT) == "table"), currentTreeLocation
@@ -43,7 +43,7 @@ function loadConfig(file, defaults, typesAllowed)
     end
     setmetatable(sandbox, {})
     for k, v in pairs(typesAllowed) do
-        if type(v) == "string" then
+        if type(k) == "string" then
             local keyValue, ranFully, currentKey = textKeyToValue(sandbox, k)
             if not isTypes(keyValue, unpack(v)) then
                 if not ranFully
