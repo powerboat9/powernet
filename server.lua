@@ -1,6 +1,6 @@
---Config
-if not fs.exists("powernet/server/config") then
-    local configWrite = fs.open("powernet/server/config", "w")
+os.loadAPI("powernet/configAPI")
+if not fs.exists("powernet/serverData/config") then
+    local configWrite = fs.open("powernet/serverData/config", "w")
     configWrite.write("--Config for Server--\n")
     configWrite.write("address = os.getComputerID()\n")
     configWrite.write("fileLocation = \"powernet/server/files/\"\n")
@@ -9,7 +9,7 @@ if not fs.exists("powernet/server/config") then
     configWrite.close()
 end
 
-os.loadAPI("powernet/server/config")
+local configData = configAPI.loadConfig("powernet/serverData/config")
 
 --Functions to get data to display
 
