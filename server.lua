@@ -26,16 +26,16 @@ function interpretRequest(request)
     local isError = false
     fileString = ""
     do
-        if config.down then
-            if type(config.down) == "boolean" then
-                local isDown = config.down
-                config.down = function(request, file, fileArgs)
+        if configData.down then
+            if type(configData.down) == "boolean" then
+                local isDown = configData.down
+                configData.down = function(request, file, fileArgs)
                     return isDown, (isDown and config.downReason)
                 end
             end
-            isError, errorCode = config.down(request, file, fileArgs)
+            isError, errorCode = configDown.down(request, file, fileArgs)
         else
-            local fileData = fs.open(config.fileLocation .. shell.resolve(file), "r")
+            local fileData = fs.open(configDown.fileLocation .. shell.resolve(file), "r")
             if fileData then
                 fileString = fileData.readAll()
                 fileData.close()
@@ -64,4 +64,8 @@ function interpretRequest(request)
     return fileString
 end
 
-function sendPage
+function encrypt(msg, key)
+    --uses my own method (xor with padding)
+    
+
+function sendPage(
