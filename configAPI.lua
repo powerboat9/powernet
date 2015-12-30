@@ -71,7 +71,7 @@ function loadConfig(file, defaults, typesAllowed)
         if type(k) == "string" then
             local keyValue, ranFully, currentKey = textKeyToValue(sandbox, k)
             --Checks that the branch stopped at is of the right type
-            if not isTypes(keyValue, unpack(typesAllowed[currentKey]) then
+            if not isTypes(keyValue, unpack(typesAllowed[currentKey])) then
                 local defaultValue, success = textKeyToValue(defaults, currentKey)
                 assert(success, "List of default values does not have: " .. currentKey)
                 setTextKeyValue(sandbox, currentKey, defaultValue)
