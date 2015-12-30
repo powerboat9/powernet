@@ -13,7 +13,7 @@ local configData = configAPI.loadConfig("powernet/serverData/config")
 
 --Functions to get data to display
 
-function interpretRequest(request, dontLoadErrorPage)
+function interpretRequest(request)
     local file = ""
     local fileArgs = ""
     do
@@ -23,34 +23,45 @@ function interpretRequest(request, dontLoadErrorPage)
     end
     local isDynamic = false
     local errorCode = nil
+    local isError = false
     fileString = ""
     do
-        local errorReport = {}
-        if config.down and ((not (type(config.down) == "function")) or config.down(errorReport, request, file, fileArgs)) then
-            if type(config.down) == "function" then
-                errorCode = tostring(errorReport.error)
-            elseif type(config.down) == "table" then
-                errorCode = textutils.serialize(config.downReason)
-            else
-                errorCode = tostring(config.downReason)
+        if config.down then
+            if type(config.down) == "boolean" then
+                local isDown = config.down
+                config.down = function(request, file, fileArgs)
+                    return isDown, (isDown and config.downReason)
+                end
             end
+            isError, errorCode = config.down(request, file, fileArgs)
         else
             local fileData = fs.open(config.fileLocation .. shell.resolve(file), "r")
             if fileData then
                 fileString = fileData.readAll()
+                fileData.close()
+            else
+                isError, errorCode = true, "Page Not Found"
             end
-            fileData.close()
             if fileString:find("^EXECUTABLE\n") then
                 isDynamic = true
                 fileString = fileString:sub(12)
             elseif fileString:find("^POWER WEBDATA\n") then
                 fileString = fileString:sub(15)
-            elseif (fileData == "") or (fileData == nil) then
-                errorCode = "Page Not Found"
+            elseif fileString == "" then
+                isError, errorCode = true, "Page Not Found"
             else
-                errorCode = "Invalid Page"
+                isError, errorCode = true, "Invalid Page"
             end
         end
     end
-    if errorCode and (not dontLoadErrorPage) then
-        return interpretRequest("
+    if isError then
+        fileString = "STATIC\ndisplay:align center\n\n" .. errorCode
+        isDynamic = false
+    end
+    if isDynamic then
+        fileString = loadstring(fileString)(request, file, fileArgs)
+    end
+    return fileString
+end
+
+function sendPage
