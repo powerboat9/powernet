@@ -1,7 +1,7 @@
 function isTypes(item, ...)
     local itemType = type(item)
     for v in ipairs(...) do
-        if itemType = v then
+        if itemType == v then
             return true
         end
     end
