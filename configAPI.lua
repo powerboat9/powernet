@@ -13,13 +13,23 @@ function setTextKeyValue(t, txt, v)
     for branch in txt:gmatch("([^%.]+)%.") do
         branches[#branches + 1] = branch
     end
+    assert(branches[1], txt .. " is not a valid branch path.")
     local currentBranch = t
-    local canFinish = false
     local branchLocation = {}
-    while not canfinish do
-        local nextBranch = branches[1]
-        if type(nextBranch) ~= "table" then
-            --finish soon
+    while true do
+        if not branches[2] then
+            break
+        end
+        local nextBranch = currentBranch[branches[1]]
+        if type(nextBranch) == "table" then
+            currentBranch = nextBranch
+        else
+            return false
+        end
+        table.remove(branches, 1)
+    end
+    t[branches[1]] = v
+end
 
 function textKeyToValue(t, txt)
     local currentT = t
@@ -31,10 +41,10 @@ function textKeyToValue(t, txt)
     end
     while (type(currentT) == "table") and branches[1] do
         currentT = currentT[branches[1]]
-        currentTreeLocation[#currentTreeLocation + 1] = branches[1]
+        currentTreeLocation:insert(1, branches[1])
         branches:remove(1)
     end
-    return currentT, (type(currentT) == "table"), currentTreeLocation:concat(".")
+    return currentT, (type(currentT) ~= "table"), currentTreeLocation:concat(".")
 end
 
 function loadConfig(file, defaults, typesAllowed)
@@ -60,10 +70,11 @@ function loadConfig(file, defaults, typesAllowed)
     for k, v in pairs(typesAllowed) do
         if type(k) == "string" then
             local keyValue, ranFully, currentKey = textKeyToValue(sandbox, k)
-            --Checks that the branch stopped at is the right type
+            --Checks that the branch stopped at is of the right type
             if not isTypes(keyValue, unpack(typesAllowed[currentKey]) then
                 local defaultValue, success = textKeyToValue(defaults, currentKey)
                 assert(success, "List of default values does not have: " .. currentKey)
+                setTextKeyValue(sandbox, currentKey, defaultValue)
             end
         end
     end
