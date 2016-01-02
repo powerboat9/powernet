@@ -66,6 +66,9 @@ end
 
 function encrypt(msg, key)
     --uses my own method (xor with padding)
-    
+end
 
-function sendPage(
+function 
+
+function sendPage(data, clientKey, channel)
+    
