@@ -9,6 +9,27 @@ if not fs.exists("powernet/serverData/config") then
     configWrite.close()
 end
 
+local modem = peripheral.find("modem", function(name, obj) return obj.isWireless() end)
+if not modem then
+    print("Wireless Modem Not Found, Checking For Wired Modem")
+    modem = assert(peripheral.find("modem"), "Could Not Find Modem")
+    local consent = false
+    while true do
+        print("Found A Wired Modem. Do You Want To Use It? (y/n)")
+        local word = read()
+        if word == "y" then
+            consent = true
+            break
+        elseif word == "n" then
+            consent = false
+            break
+        else
+            print("Please type \"y\" or \"n\"")
+        end
+    end
+    assert(consent, "Could Not Find Wireless Modem")
+end
+
 local configData = configAPI.loadConfig("powernet/serverData/config")
 
 --Functions to get data to display
@@ -65,10 +86,17 @@ function interpretRequest(request)
 end
 
 function encrypt(msg, key)
-    --uses my own method (xor with padding)
+    --not there yet, doesn't encrypt for testing purposes
+    return msg
 end
 
-function 
+function decrypt(msg, key)
+    --also doesn't decript yet
+    return msg
+end
 
 function sendPage(data, clientKey, channel)
-    
+    local sendData = encrypt(data, clientKey)
+    local transmitTimer = nil
+    local timeoutTimer = nil
+    while true do
