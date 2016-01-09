@@ -9,6 +9,9 @@ if not fs.exists("powernet/serverData/config") then
     configWrite.close()
 end
 
+local clients = {}
+local sendingChannels = {}
+
 local modem = peripheral.find("modem", function(name, obj) return obj.isWireless() end)
 if not modem then
     print("Wireless Modem Not Found, Checking For Wired Modem")
@@ -95,8 +98,60 @@ function decrypt(msg, key)
     return msg
 end
 
-function sendPage(data, clientKey, channel)
-    local sendData = encrypt(data, clientKey)
+function sendPage(data, clientEncryptKey, myDecryptKey, channel, verificationString, myVerificationString, myChannel)
+    local sendData = "Sending " .. myVerificationString .. "\n\n" .. encrypt(data, clientKey)
     local transmitTimer = nil
     local timeoutTimer = nil
+    local timedOut = false
+    local gotIt = false
     while true do
+        transmitTimer = os.startTimer(0.5)
+        while true do
+            local event, timerOrSide, to, from, msg = os.pullEvent()
+            if event == "timer" then
+                if timer == timeoutTimer then
+                    timedOut = true
+                    break
+                elseif timer == transmitTimer then
+                    break
+                end
+            elseif (event == "modem_message") and (decrypt(msg, myDecryptKey) == ("Recived " .. myVerificationString .. " " .. verificationString)) then
+                gotIt = true
+                timedOut = true
+            end
+        end
+        if timedOut then
+            break
+        end
+        modem.transmit(channel, myChannel, sendData)
+    end
+    if not gotIt then
+        print("A Client Timed Out")
+    end
+end
+
+function initializeClient(clientEncryptKey, clientVerificationString, channel)
+    local clientID = 1
+    for k, v in ipairs(clients) do
+        clientID = clientID + 1
+    end
+    clients[clientID] = {
+        ["encryptKey"] = clientEncryptKey,
+        ["verifyKey"] = clientVerificationString,
+        ["channel"] = channel
+    }
+    updateSendingChannels()
+end
+
+function updateSendingChannels()
+    sendingChannels = {}
+    for clientID, clientTable in pairs(clients) do
+        local openingChannel = clientTable.channel
+        if not sendingChannels[openingChannel] then
+            sendingChannels[openingChannel] = true
+        end
+    end
+end
+
+while true do
+    local
