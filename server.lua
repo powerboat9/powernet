@@ -98,6 +98,10 @@ function decrypt(msg, key)
     return msg
 end
 
+function randchar()
+    local charNumb = math.floor(math.random(0, 255) + 0.5)
+    return 
+
 function sendPage(data, clientEncryptKey, myDecryptKey, channel, verificationString, myVerificationString, myChannel)
     local sendData = "Sending " .. myVerificationString .. "\n\n" .. encrypt(data, clientKey)
     local transmitTimer = nil
@@ -154,7 +158,7 @@ function updateSendingChannels()
 end
 
 function client()
-    local clientID, encryptKey, decryptKey, myID = coroutine.yield()
+    local clientID, encryptKey, decryptKey, myID, inChannel, outChannel = coroutine.yield()
     while true do
         local term, termReason, clientMSG = coroutine.yield()
         if term then
@@ -163,7 +167,9 @@ function client()
                 ["clientID"] = clientID,
                 ["data"] = encrypt(textutils.serialize({
                     ["reason"] = termReason or "unknown"
-                }))
+                })),
+                ["sig"] = encrypt(clientMSG.verify),
+                ["verify"] = randstring()
             })
             break
         end
@@ -178,7 +184,8 @@ function client()
                     ["src"] = interpretRequest(data.url)
                 }))
             })
-        end
+        elseif msg = "close_reply" then
+            modem.trans
     end
 end
 
