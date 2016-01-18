@@ -153,5 +153,38 @@ function updateSendingChannels()
     end
 end
 
-while true do
-    local
+function client()
+    local clientID, encryptKey, decryptKey, myID = coroutine.yield()
+    while true do
+        local term, termReason, clientMSG = coroutine.yield()
+        if term then
+            modem.transmit({
+                ["msg"] = encrypt("close"),
+                ["clientID"] = clientID,
+                ["data"] = encrypt(textutils.serialize({
+                    ["reason"] = termReason or "unknown"
+                }))
+            })
+            break
+        end
+        local msg = decrypt(clientMSG.msg)
+        local data = textutils.unserialize(decrypt(clientMSG))
+        if msg == "get_page" then
+            modem.transmit({
+                ["msg"] = encrypt("sending_page"),
+                ["clientID"] = clientID,
+                ["data"] = encrypt(textutils.serialize({
+                    ["url"] = data.url,
+                    ["src"] = interpretRequest(data.url)
+                }))
+            })
+        end
+    end
+end
+
+function getClient(clientID, encryptKey, decryptKey, myID)
+    local newClient = coroutine.create(client)
+    coroutine.resume(newClient)
+    coroutine.resume(newClient, clientID, encryptKey, decryptKey, myID)
+    return newClient
+end
