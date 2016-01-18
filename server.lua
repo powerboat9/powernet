@@ -99,8 +99,18 @@ function decrypt(msg, key)
 end
 
 function randchar()
-    local charNumb = math.floor(math.random(0, 255) + 0.5)
-    return 
+    local charNumb = math.floor(math.random(1, ) + 0.5)
+    return ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"):sub(charNumb, charNumb)
+end
+
+function randstring(n)
+    n = n or 32
+    local returnString = ""
+    for 1, n do
+        returnString = returnString .. randchar()
+    end
+    return returnString
+end
 
 function sendPage(data, clientEncryptKey, myDecryptKey, channel, verificationString, myVerificationString, myChannel)
     local sendData = "Sending " .. myVerificationString .. "\n\n" .. encrypt(data, clientKey)
@@ -177,12 +187,12 @@ function client()
         local data = textutils.unserialize(decrypt(clientMSG))
         if msg == "get_page" then
             modem.transmit({
-                ["msg"] = encrypt("sending_page"),
+                ["msg"] = encrypt("sending_page", encryptKey),
                 ["clientID"] = clientID,
                 ["data"] = encrypt(textutils.serialize({
                     ["url"] = data.url,
                     ["src"] = interpretRequest(data.url)
-                }))
+                }), encryptKey)
             })
         elseif msg = "close_reply" then
             modem.trans
