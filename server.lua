@@ -170,13 +170,13 @@ end
 function client()
     local clientID, encryptKey, decryptKey, myID, inChannel, outChannel = coroutine.yield()
     while true do
-        local term, termReason, clientMSG = coroutine.yield()
-        if term then
-            modem.transmit({
+        local parentData, clientMSG = coroutine.yield()
+        if (parentData.code == "terminate") and (not clientMSG) then
+            modem.transmit(inChannel, outChannel, {
                 ["msg"] = encrypt("close"),
                 ["clientID"] = clientID,
                 ["data"] = encrypt(textutils.serialize({
-                    ["reason"] = termReason or "unknown"
+                    ["reason"] = parentData.data[1] or "unknown"
                 })),
                 ["sig"] = encrypt(clientMSG.verify),
                 ["verify"] = randstring()
@@ -186,16 +186,19 @@ function client()
         local msg = decrypt(clientMSG.msg)
         local data = textutils.unserialize(decrypt(clientMSG))
         if msg == "get_page" then
-            modem.transmit({
+            modem.transmit(inChannel, outChannel, {
                 ["msg"] = encrypt("sending_page", encryptKey),
                 ["clientID"] = clientID,
                 ["data"] = encrypt(textutils.serialize({
                     ["url"] = data.url,
                     ["src"] = interpretRequest(data.url)
-                }), encryptKey)
+                }), encryptKey),
+                ["sig"] = encrypt(clientMSG.verify),
+                ["verify"] = randstring()
             })
-        elseif msg = "close_reply" then
-            modem.trans
+        elseif msg = "close" then
+            break
+        end
     end
 end
 
